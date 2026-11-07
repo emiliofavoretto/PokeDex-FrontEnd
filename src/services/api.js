@@ -10,9 +10,12 @@ export async function api(path, options = {}) {
       ...options.headers,
     },
   });
+
+  const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Erro na requisição");
+    throw new Error(data.error || data.message || "Erro na requisição");
   }
-  return res.json();
+
+  return data; 
 }

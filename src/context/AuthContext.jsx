@@ -10,15 +10,14 @@ export function AuthProvider({ children }) {
   });
 
   async function login(email, password) {
-    // ajuste a rota e o formato da resposta para o seu backend
-    const data = await api("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    setUser(data.user);
-  }
+  const data = await api("/api/usuarios/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("user", JSON.stringify(data.usuario));
+  setUser(data.usuario);
+}
 
   function logout() {
     localStorage.clear();

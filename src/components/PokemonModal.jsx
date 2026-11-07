@@ -3,38 +3,75 @@ import { api } from "../services/api";
 
 export default function PokemonModal({ id, onClose }) {
   const [pokemon, setPokemon] = useState(null);
+  const [erro, setErro] = useState(false);
+  const [msg, setMsg] = useState("");
 
   useEffect(() => {
+    setPokemon(null);
+    setErro(false);
     fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
-      .then((r) => r.json())
-      .then(setPokemon);
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then(setPokemon)
+      .catch(() => setErro(true));
   }, [id]);
 
   async function favoritar() {
-    // ajuste a rota para a do seu backend
-    await api("/favorites", {
-      method: "POST",
-      body: JSON.stringify({ pokemonId: id }),
-    });
-    alert("Favoritado!");
+    try {
+      // ajuste a rota para a real do seu backend de favoritos
+      await api("/api/usuarios_favoritos", {
+        method: "POST",
+        body: JSON.stringify({ pokemonId: pokemon.id }),
+      });
+      setMsg("⭐ Adicionado aos favoritos!");
+    } catch (e) {
+      setMsg(e.message);
+    }
   }
 
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        {!pokemon ? <p>Carregando...</p> : (
+        <button className="close" onClick={onClose}>✕</button>
+
+        {erro && <p className="empty">Pokémon não encontrado 😕</p>}
+        {!erro && !pokemon && <p className="empty">Carregando...</p>}
+
+        {pokemon && (
           <>
-            <button onClick={onClose}>✕</button>
-            <img src={pokemon.sprites.other["official-artwork"].front_default} alt={pokemon.name} width="200" />
-            <h2>#{pokemon.id} {pokemon.name}</h2>
-            <p>Tipos: {pokemon.types.map((t) => t.type.name).join(", ")}</p>
-            <p>Altura: {pokemon.height / 10} m | Peso: {pokemon.weight / 10} kg</p>
-            <ul>
-              {pokemon.stats.map((s) => (
-                <li key={s.stat.name}>{s.stat.name}: {s.base_stat}</li>
+            <img className="art" alt={pokemon.name}
+                 src={pokemon.sprites.other["official-artwork"].front_default} />
+            <h2>
+              {pokemon.name} <span>#{String(pokemon.id).padStart(4, "0")}</span>
+            </h2>
+
+            <div className="types">
+              {pokemon.types.map((t) => (
+                <span key={t.type.name} className={`type ${t.type.name}`}>{t.type.name}</span>
               ))}
-            </ul>
-            <button onClick={favoritar}>⭐ Favoritar</button>
+            </div>
+
+            <div className="info">
+              <div><strong>{pokemon.height / 10} m</strong>Altura</div>
+              <div><strong>{pokemon.weight / 10} kg</strong>Peso</div>
+            </div>
+
+            <div className="stats">
+              {pokemon.stats.map((s) => (
+                <div className="stat" key={s.stat.name}>
+                  <span className="label">{s.stat.name.replace("special-", "sp. ")}</span>
+                  <div className="bar">
+                    <div style={{ width: `${Math.min(s.base_stat / 2, 100)}%` }} />
+                  </div>
+                  <span className="val">{s.base_stat}</span>
+                </div>
+              ))}
+            </div>
+
+            <button className="btn-fav" onClick={favoritar}>⭐ Favoritar</button>
+            {msg && <p className="fav-msg">{msg}</p>}
           </>
         )}
       </div>
